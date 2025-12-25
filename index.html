@@ -1,0 +1,745 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="2026 丙午年·命理修运策 - 本地离线版">
+    <title>2026 丙午年·赤马红羊劫</title>
+    
+    <!-- 核心库 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #eab308;
+            --stone-950: #0c0a09;
+            --stone-900: #1c1917;
+        }
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background-color: var(--stone-950);
+            transition: background-color 0.5s ease, color 0.5s ease;
+            color: #f8fafc;
+            margin: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-calligraphy {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        .animate-flame {
+            animation: breathe 6s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.01); filter: brightness(1.2); }
+        }
+        .writing-mode-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+        ::selection { background: #eab308; color: #000; }
+        body.light-theme {
+            background-color: #fdfcfb;
+            background-image: linear-gradient(to bottom, #fdfcfb, #f5f2f0);
+            color: #1a1a1a;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ==========================================
+        // 1. 类型定义与常量 (Constants & Enums)
+        // ==========================================
+        
+        const ZodiacType = {
+            Rat: '鼠', Ox: '牛', Tiger: '虎', Rabbit: '兔',
+            Dragon: '龙', Snake: '蛇', Horse: '马', Goat: '羊',
+            Monkey: '猴', Rooster: '鸡', Dog: '狗', Pig: '猪'
+        };
+
+        const DayMasterType = {
+            Jia: '甲', Yi: '乙', Bing: '丙', Ding: '丁', Wu: '戊',
+            Ji: '己', Geng: '庚', Xin: '辛', Ren: '壬', Gui: '癸'
+        };
+
+        const ThemeMode = {
+            Mystic: 'mystic',
+            Paper: 'paper'
+        };
+
+        const AppStep = {
+            Welcome: 0,
+            ZodiacSelection: 1,
+            ZodiacInsight: 2,
+            DayMasterCalculation: 3,
+            FinalReport: 4
+        };
+
+        const STEM_INFO = {
+            '甲': { element: '木', color: 'text-emerald-500', icon: '🌳', polarity: 1 },
+            '乙': { element: '木', color: 'text-green-400', icon: '🌿', polarity: -1 },
+            '丙': { element: '火', color: 'text-red-500', icon: '🔥', polarity: 1 },
+            '丁': { element: '火', color: 'text-orange-400', icon: '🕯️', polarity: -1 },
+            '戊': { element: '土', color: 'text-yellow-700', icon: '⛰️', polarity: 1 },
+            '己': { element: '土', color: 'text-yellow-500', icon: '🌾', polarity: -1 },
+            '庚': { element: '金', color: 'text-slate-300', icon: '⚔️', polarity: 1 },
+            '辛': { element: '金', color: 'text-zinc-100', icon: '💎', polarity: -1 },
+            '壬': { element: '水', color: 'text-blue-500', icon: '🌊', polarity: 1 },
+            '癸': { element: '水', color: 'text-sky-300', icon: '💧', polarity: -1 },
+        };
+
+        const BRANCH_INFO = {
+            '子': { element: '水', color: 'text-blue-500', icon: '🐭', zodiac: '鼠' },
+            '丑': { element: '土', color: 'text-yellow-600', icon: '🐮', zodiac: '牛' },
+            '寅': { element: '木', color: 'text-emerald-600', icon: '🐯', zodiac: '虎' },
+            '卯': { element: '木', color: 'text-green-400', icon: '🐰', zodiac: '兔' },
+            '辰': { element: '土', color: 'text-yellow-600', icon: '🐲', zodiac: '龙' },
+            '巳': { element: '火', color: 'text-red-500', icon: '🐍', zodiac: '蛇' },
+            '午': { element: '火', color: 'text-red-600', icon: '🐴', zodiac: '马' },
+            '未': { element: '土', color: 'text-yellow-500', icon: '🐑', zodiac: '羊' },
+            '申': { element: '金', color: 'text-slate-300', icon: '🐒', zodiac: '猴' },
+            '酉': { element: '金', color: 'text-zinc-100', icon: '🐔', zodiac: '鸡' },
+            '戌': { element: '土', color: 'text-yellow-700', icon: '🐶', zodiac: '狗' },
+            '亥': { element: '水', color: 'text-blue-700', icon: '🐷', zodiac: '猪' },
+        };
+
+        const TEN_GODS_MAP = {
+            '比肩': { title: '比肩', desc: '流年逢比肩，自我意识增强，凡事宜自立自强。易道建议：稳扎稳打，切莫轻信旁人，独立方能破局。' },
+            '劫财': { title: '劫财', desc: '流年逢劫财，需防意气用事导致钱财耗散。易道建议：谨言慎行，以静制动，避免风险投资。' },
+            '食神': { title: '食神', desc: '流年逢食神，乃吐秀之年，心情舒畅，利于文化创作。易道建议：保持温和，展现才干，机遇自来。' },
+            '伤官': { title: '伤官', desc: '流年逢伤官，才气纵横但也伴随口舌之争。易道建议：收敛锋芒，将能量转化为创造，而非对抗。' },
+            '偏财': { title: '偏财', desc: '流年逢偏财，意外之机遇增多，思维变幻。易道建议：见好就收，切莫贪婪，离火之年守正为要。' },
+            '正财': { title: '正财', desc: '流年逢正财，事业步入稳健轨道，努力必有回响。易道建议：长远布局，深耕本业，积微成著。' },
+            '七杀': { title: '七杀', desc: '流年逢七杀，压力与转折共生，考验意志。易道建议：保持高度警觉，在变动中寻生机，退即是进。' },
+            '正官': { title: '正官', desc: '流年逢正官，利于名望提升，受人敬重。易道建议：自律正直，确立个人口碑，正道坦途。' },
+            '偏印': { title: '偏印', desc: '流年逢偏印，利于钻研深度学问或玄奥知识。易道建议：疏解内心，多与智者交流，化空想为行力。' },
+            '正印': { title: '正印', desc: '流年逢正印，贵人扶持，长辈眷顾，心境安稳。易道建议：静心进修，以厚德承载流年波动。' }
+        };
+
+        const REPORT_TEMPLATES = {
+            ELEMENT_RELATIONS: {
+                '木': {
+                title: '木火通明 · 泄秀之年',
+                desc: '流年丙午，火气鼎盛。木生火为“食伤”，主才华外露、思维活跃。然火多木焚，需防精力透支。此年是“输出”之年，宜创作、表达，忌盲目扩张。'
+                },
+                '火': {
+                title: '烈火烹油 · 比劫争雄',
+                desc: '流年丙午，与日主同气。两火相见，光芒万丈亦伴随激烈竞争。此年是“博弈”之年，机遇与挑战并存，需防急躁冲动，宜抱团取暖，忌单打独斗。'
+                },
+                '土': {
+                title: '火炎土燥 · 印星过旺',
+                desc: '流年丙午，火生土为“印星”。火势太旺则土焦，虽有贵人扶持、资源涌入，但易感压抑焦虑。此年是“沉淀”之年，宜学习、进修，忌固执己见。'
+                },
+                '金': {
+                title: '火炼真金 · 官杀攻身',
+                desc: '流年丙午，火克金为“官杀”。丙火猛烈，金受克制，压力剧增，亦是成器之时。此年是“磨砺”之年，宜承担重任、改革，忌正面硬刚。'
+                },
+                '水': {
+                title: '水火既济 · 财星高照',
+                desc: '流年丙午，水克火为“财星”。水火相激，动荡中藏巨大机会。离火大运，财源滚滚但极不稳定。此年是“逐鹿”之年，宜求财、跨界，忌贪得无厌。'
+                }
+            },
+            ZODIAC_SECRETS: {
+                [ZodiacType.Rat]: "子午相冲，水火激荡。今年变动极大，易有远行、搬迁或职位变动，宜动不宜静。",
+                [ZodiacType.Ox]: "丑午相害，易生琐碎。需防小人是非，凡事留有余地，莫因小失大。",
+                [ZodiacType.Tiger]: "寅午半合，火局助势。贵人运强，利于合作共赢，事业可更上一层楼。",
+                [ZodiacType.Rabbit]: "卯木生火，顺势而为。虽有消耗，但能得赏识，利于名声传播。",
+                [ZodiacType.Dragon]: "龙马精神，气场相生。状态稳健，利于按部就班推进长期计划。",
+                [ZodiacType.Snake]: "巳午同气，火势更旺。需注意情绪管理，避免因冲动而坏事。",
+                [ZodiacType.Horse]: "值年太岁，午午自刑。易陷入自我纠结，需修心养性，放过自己。",
+                [ZodiacType.Goat]: "午未六合，日月生辉。运势顺遂，人际和谐，是拓展人脉的绝佳年份。",
+                [ZodiacType.Monkey]: "火克金金，压力虽大但能炼金。动中求财，适合出差或开拓新市场。",
+                [ZodiacType.Rooster]: "红鸾星动，桃花灿烂。利于社交、演艺及情感发展，但也需防烂桃花。",
+                [ZodiacType.Dog]: "戌午半合，火库收纳。才华得以沉淀转化，利于幕后策划或资产管理。",
+                [ZodiacType.Pig]: "暗合贵人，绝处逢生。表面平淡实则暗藏生机，遇困难自有解救之道。"
+            }
+        };
+
+        const DAY_MASTER_LIST = [
+            {
+                type: DayMasterType.Jia, icon: '🌳', element: '木', polarity: '阳',
+                keywords: '正直、担当',
+                nature: '宛如参天大树，挺拔正直。丙午之年，木生火燃，需防过度消耗，守住根基。',
+                cultivation: '仁者无忧',
+                riskTip: '火旺木焚，凡事切忌急躁，合作易生虚火。',
+                novStrategy: '先正其心，后行其事。遇事多退一步，求财宜稳。'
+            },
+            {
+                type: DayMasterType.Yi, icon: '🌿', element: '木', polarity: '阴',
+                keywords: '柔顺、灵活',
+                nature: '宛如春风细柳，极具韧性。赤马之年，利于展现巧思，但要防范小人夺光。',
+                cultivation: '柔中寓刚',
+                riskTip: '灵感虽多，但落地难。偏财易进易出。',
+                novStrategy: '专注正业，莫贪横财。借贵人之力，行稳致远。'
+            },
+            {
+                type: DayMasterType.Bing, icon: '🔥', element: '火', polarity: '阳',
+                keywords: '热情、光明',
+                nature: '如烈日当空。流年值丙午，火气叠叠，最需调候，切莫因狂热误事。',
+                cultivation: '明哲保身',
+                riskTip: '火过旺则脆，情绪易失控，容易招惹非议。',
+                novStrategy: '以水克火，多听取反对意见。保持冷静是第一要务。'
+            },
+            {
+                type: DayMasterType.Ding, icon: '🕯️', element: '火', polarity: '阴',
+                keywords: '细腻、执着',
+                nature: '如灯火微光。丙午年火旺相助，才华得以显现，但需防范内耗过重。',
+                cultivation: '内敛神光',
+                riskTip: '事务繁杂，节奏易乱。注意身体劳损。',
+                novStrategy: '劳逸结合，守住内心一点真明，不随外界起舞。'
+            },
+            {
+                type: DayMasterType.Wu, icon: '⛰️', element: '土', polarity: '阳',
+                keywords: '厚重、守信',
+                nature: '如高山厚土。火生土旺，今年是您承载重任之时，利于确立威信。',
+                cultivation: '诚而有信',
+                riskTip: '过于固执容易错失变革机会。合作需防被动。',
+                novStrategy: '适当变通，顺应离火之势。多接纳新事物。'
+            },
+            {
+                type: DayMasterType.Ji, icon: '🌾', element: '土', polarity: '阴',
+                keywords: '包容、周全',
+                nature: '如沃野良田。火燥土焦，今年需注意情绪舒缓，别让自己太紧绷。',
+                cultivation: '和合共生',
+                riskTip: '琐事缠身，容易感到疲惫。脾胃需多关照。',
+                novStrategy: '饮食起居宜清淡。简化社交，专注核心目标。'
+            },
+            {
+                type: DayMasterType.Geng, icon: '⚔️', element: '金', polarity: '阳',
+                keywords: '刚毅、果决',
+                nature: '如精钢利刃。流年午火炼金，是磨砺成器之年，辛苦但有所成。',
+                cultivation: '大器晚成',
+                riskTip: '压力骤增，容易硬碰硬。言语易伤人。',
+                novStrategy: '柔和处事。将压力转化为动力，借火炼金。'
+            },
+            {
+                type: DayMasterType.Xin, icon: '💎', element: '金', polarity: '阴',
+                keywords: '清雅、敏锐',
+                nature: '如首饰明珠。丙午火旺克金，今年需低调藏锋，避开冲突。',
+                cultivation: '清净无为',
+                riskTip: '感情波折较多，容易产生误解。职场宜避嫌。',
+                novStrategy: '提升内功，莫争一时长短。清者自清。'
+            },
+            {
+                type: DayMasterType.Ren, icon: '🌊', element: '水', polarity: '阳',
+                keywords: '博大、洒脱',
+                nature: '如江河湖海。水火既济，今年是您智慧激发的巅峰，利于跨界。',
+                cultivation: '智圆行方',
+                riskTip: '水火相激，变动极大。投资需格外谨慎。',
+                novStrategy: '设定止损。保持专注，不被浮华所惑。'
+            },
+            {
+                type: DayMasterType.Gui, icon: '💧', element: '水', polarity: '阴',
+                keywords: '聪慧、润物',
+                nature: '如雨露之水。丙午大火之年，水气易干，需多寻找精神滋养。',
+                cultivation: '上善若水',
+                riskTip: '精力分散，财来财去。人情开支较大。',
+                novStrategy: '量入为出。多亲近自然，保持心境温润。'
+            }
+        ];
+
+        const ZODIAC_LIST = [
+            { type: ZodiacType.Rat, title: '守心待时', icon: '🐭', rating: 2, tags: ['子午相冲', '宜静'], description: '流年子午相冲，火水未济。易道建议：心定如山，守正出奇。' },
+            { type: ZodiacType.Ox, title: '稳扎稳打', icon: '🐮', rating: 3, tags: ['丑午相害', '谨言'], description: '流年丑午相害，琐碎杂务多。易道建议：处乱不惊，步步为营。' },
+            { type: ZodiacType.Tiger, title: '借势登高', icon: '🐯', rating: 4, tags: ['寅午相合', '机遇'], description: '流年寅午相合，木火通明。易道建议：抓住契机，顺势而上。' },
+            { type: ZodiacType.Rabbit, title: '和乐且湛', icon: '🐰', rating: 5, tags: ['吉星高照', '贵人'], description: '流年天喜照耀，喜庆盈门。易道建议：广结善缘，和气生财。' },
+            { type: ZodiacType.Dragon, title: '潜龙在渊', icon: '🐲', rating: 3, tags: ['平稳蓄势', '中庸'], description: '流年气场趋稳，波澜不惊。易道建议：静心思变，厚积薄发。' },
+            { type: ZodiacType.Snake, title: '奋翼而起', icon: '🐍', rating: 4, tags: ['巳午同气', '晋升'], description: '流年火气充盈，贵人暗助。易道建议：敢于突破，必有所成。' },
+            { type: ZodiacType.Horse, title: '修心化劫', icon: '🐴', rating: 2, tags: ['本命太岁', '自省'], description: '值年太岁，午午自刑。易道建议：收敛心性，不争为赢。' },
+            { type: ZodiacType.Goat, title: '顺水推舟', icon: '🐑', rating: 5, tags: ['午未六合', '圆满'], description: '流年六合生辉，万事亨通。易道建议：把握良机，多行善事。' },
+            { type: ZodiacType.Monkey, title: '动中求胜', icon: '🐒', rating: 3, tags: ['驿马动能', '远行'], description: '流年驿马星动，动则有机。易道建议：跨界求索，行者无疆。' },
+            { type: ZodiacType.Rooster, title: '贵人引路', icon: '🐔', rating: 4, tags: ['红鸾心动', '人和'], description: '流年红鸾入命，人缘极佳。易道建议：真诚待人，必获回报。' },
+            { type: ZodiacType.Dog, title: '慧心独具', icon: '🐶', rating: 4, tags: ['戌午相合', '睿智'], description: '流年三合入命，才智迸发。易道建议：深研内功，智慧立身。' },
+            { type: ZodiacType.Pig, title: '否极泰来', icon: '🐷', rating: 4, tags: ['运势回暖', '稳健'], description: '流年正财入库，家宅安宁。易道建议：知足常乐，稳步前行。' },
+        ];
+
+        // ==========================================
+        // 2. 本地易道算法 (Local Algorithm)
+        // ==========================================
+
+        const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+        function validateZodiacYear(year, selectedZodiac) {
+            const zodiacList = [
+                ZodiacType.Rat, ZodiacType.Ox, ZodiacType.Tiger, ZodiacType.Rabbit,
+                ZodiacType.Dragon, ZodiacType.Snake, ZodiacType.Horse, ZodiacType.Goat,
+                ZodiacType.Monkey, ZodiacType.Rooster, ZodiacType.Dog, ZodiacType.Pig
+            ];
+            // 1984是鼠年，(1984-4)%12 = 0。余数0为鼠。
+            const index = (year - 4) % 12;
+            const actualZodiac = zodiacList[index < 0 ? index + 12 : index];
+            return {
+                isValid: actualZodiac === selectedZodiac,
+                expected: actualZodiac
+            };
+        }
+
+        async function calculateBaziProfile(birthDate, birthTime) {
+            const date = new Date(birthDate);
+            let year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 简化版立春修正（本地算法近似）
+            if (month < 2 || (month === 2 && day < 4)) {
+                year -= 1;
+            }
+            
+            const yearOffset = year - 1900;
+            const yearStemIdx = (6 + yearOffset) % 10;
+            const yearBranchIdx = (0 + yearOffset) % 12;
+
+            const monthBranchIdx = (month + 1) % 12; // 简化排月
+            const monthStemBase = (yearStemIdx % 5) * 2 + 2;
+            const monthStemIdx = (monthStemBase + month - 1) % 10;
+
+            // 儒略日计算日柱
+            const getJulianDay = (y, m, d) => {
+                if (m <= 2) { y -= 1; m += 12; }
+                const a = Math.floor(y / 100);
+                const b = 2 - a + Math.floor(a / 4);
+                return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524.5;
+            };
+            const jd = getJulianDay(date.getFullYear(), month, day);
+            const diff = Math.floor(jd - 2451545.0);
+            const dayStemIdx = ((0 + diff) % 10 + 10) % 10;
+            const dayBranchIdx = ((10 + diff) % 12 + 12) % 12;
+
+            let hourPillar = undefined;
+            if (birthTime && birthTime !== 'UNKNOWN') {
+                const hourNum = parseInt(birthTime.split(':')[0]);
+                const hourBranchIdx = Math.floor((hourNum + 1) / 2) % 12;
+                const hourStemBase = (dayStemIdx % 5) * 2;
+                const hourStemIdx = (hourStemBase + hourBranchIdx) % 10;
+                hourPillar = { stem: STEMS[hourStemIdx], branch: BRANCHES[hourBranchIdx] };
+            }
+
+            return {
+                year: { stem: STEMS[yearStemIdx], branch: BRANCHES[yearBranchIdx] },
+                month: { stem: STEMS[monthStemIdx], branch: BRANCHES[monthBranchIdx] },
+                day: { stem: STEMS[dayStemIdx], branch: BRANCHES[dayBranchIdx] },
+                hour: hourPillar
+            };
+        }
+
+        function getTenGodRelation(dm, targetStem) {
+            const dmInfo = STEM_INFO[dm];
+            const targetInfo = STEM_INFO[targetStem];
+            const relations = {
+                '木': { '木': '比劫', '火': '食伤', '土': '财星', '金': '官杀', '水': '印星' },
+                '火': { '木': '印星', '火': '比劫', '土': '食伤', '金': '财星', '水': '官杀' },
+                '土': { '木': '官杀', '火': '印星', '土': '比劫', '金': '食伤', '水': '财星' },
+                '金': { '木': '财星', '火': '官杀', '土': '印星', '金': '比劫', '水': '食伤' },
+                '水': { '木': '食伤', '火': '财星', '土': '官杀', '金': '印星', '水': '比劫' },
+            };
+            const type = relations[dmInfo.element][targetInfo.element];
+            const samePol = dmInfo.polarity === targetInfo.polarity;
+            
+            if (type === '比劫') return samePol ? '比肩' : '劫财';
+            if (type === '食伤') return samePol ? '食神' : '伤官';
+            if (type === '财星') return samePol ? '偏财' : '正财';
+            if (type === '官杀') return samePol ? '七杀' : '正官';
+            if (type === '印星') return samePol ? '偏印' : '正印';
+            return '比肩';
+        }
+
+        async function generateCombinedStrategy(zodiac, dayMaster, zodiacData, dayMasterData, bazi) {
+            // 1. 计算流年关系
+            const tenGod = getTenGodRelation(dayMaster, '丙'); // 丙午年，天干丙
+            const godInfo = TEN_GODS_MAP[tenGod];
+            const dmInfo = STEM_INFO[dayMaster];
+            const relationInfo = REPORT_TEMPLATES.ELEMENT_RELATIONS[dmInfo.element];
+            const zodiacSecret = REPORT_TEMPLATES.ZODIAC_SECRETS[zodiac];
+
+            // 2. 拼接 Markdown 风格报告
+            const report = `**【天时 · 离火大势】**
+2026 丙午年，九紫离火运之鼎盛期。
+命主日元为【${dayMaster}${dmInfo.element}】，${dayMasterData.nature}
+流年遇丙午，成【${relationInfo.title}】之局。
+${relationInfo.desc}
+
+**【流年 · 十神运程】**
+本年值神为【${tenGod}】。
+${godInfo.desc}
+易理核心：${dayMasterData.riskTip}
+
+**【地利 · 生肖玄机】**
+生肖属${zodiac}，逢马年：
+${zodiacSecret}
+${zodiacData.description}
+
+**【人和 · 修持锦囊】**
+易道心法：**${dayMasterData.cultivation}**
+${dayMasterData.novStrategy}
+
+**【易道智慧：知命顺时，安身立命。】**`;
+
+            return report;
+        }
+
+        // ==========================================
+        // 3. React 组件 (Components)
+        // ==========================================
+
+        const { useState, useEffect, useMemo, useCallback } = React;
+        const STORAGE_KEY = 'YIDAO_2026_V6_LOCAL_HTML';
+
+        const BaziPillarCard = ({ pillar, label, isDayMaster, isYearBranch, theme }) => {
+            const isDark = theme === ThemeMode.Mystic;
+            
+            if (!pillar || !pillar.stem || pillar.stem === '?' || !pillar.branch || pillar.branch === '?') {
+                return (
+                <div className="flex flex-col items-center gap-2 opacity-25 grayscale">
+                    <span className="text-[10px] font-black tracking-widest uppercase">{label}</span>
+                    <div className={`flex flex-col items-center justify-center w-16 md:w-24 h-48 rounded-[2.5rem] border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-slate-50'}`}>
+                    <span className="text-xl font-calligraphy writing-mode-vertical">待考</span>
+                    </div>
+                </div>
+                );
+            }
+
+            const stemInfo = STEM_INFO[pillar.stem] || { element: '?', color: 'text-slate-400' };
+            const branchInfo = BRANCH_INFO[pillar.branch] || { element: '?', color: 'text-slate-400' };
+            
+            return (
+                <div className="flex flex-col items-center gap-2 animate-in slide-in-from-top duration-700">
+                <span className={`text-[10px] font-black tracking-[0.3em] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</span>
+                <div className={`flex flex-col items-center w-16 md:w-24 py-6 rounded-[2.5rem] border transition-all duration-700 ${isDayMaster || isYearBranch 
+                    ? (isDark ? 'border-amber-500/50 bg-amber-950/20 shadow-[0_0_30px_rgba(245,158,11,0.25)]' : 'border-red-600/40 bg-red-50/50 shadow-lg') 
+                    : (isDark ? 'border-white/5 bg-white/5' : 'border-slate-100 bg-white shadow-sm')}`}>
+                    <div className="flex flex-col items-center mb-6 relative">
+                    <span className={`text-4xl md:text-5xl font-calligraphy select-none transition-colors duration-500 ${stemInfo.color}`}>
+                        {pillar.stem}
+                    </span>
+                    <span className={`text-[9px] font-bold mt-2 opacity-60 ${isDark ? 'text-white' : 'text-slate-900'}`}>{stemInfo.element}</span>
+                    {isDayMaster && (
+                        <span className={`absolute -top-3 -right-6 text-[8px] px-2 py-0.5 rounded-full font-black shadow-lg ${isDark ? 'bg-amber-500 text-black' : 'bg-red-700 text-white'}`}>日主</span>
+                    )}
+                    </div>
+                    <div className={`w-10 h-px mb-6 ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}></div>
+                    <div className="flex flex-col items-center">
+                    <span className={`text-4xl md:text-5xl font-calligraphy select-none transition-colors duration-500 ${branchInfo.color}`}>
+                        {pillar.branch}
+                    </span>
+                    <span className={`text-[9px] font-bold mt-2 opacity-60 ${isDark ? 'text-white' : 'text-slate-900'}`}>{branchInfo.element}</span>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [step, setStep] = useState(AppStep.Welcome);
+            const [theme, setTheme] = useState(ThemeMode.Mystic);
+            const [user, setUser] = useState({ zodiac: ZodiacType.Rat, birthTime: '' });
+            const [loading, setLoading] = useState(false);
+            const [errorMsg, setErrorMsg] = useState(null);
+            const [finalReport, setFinalReport] = useState('');
+
+            const [birthYear, setBirthYear] = useState('1990');
+            const [birthMonth, setBirthMonth] = useState('1');
+            const [birthDay, setBirthDay] = useState('1');
+
+            // Load saved state
+            useEffect(() => {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        setUser(parsed.user);
+                        setFinalReport(parsed.report || '');
+                        if (parsed.report) setStep(AppStep.FinalReport);
+                    } catch (e) {
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                }
+            }, []);
+
+            const isDark = theme === ThemeMode.Mystic;
+            const selectedZodiacData = ZODIAC_LIST.find(z => z.type === user.zodiac);
+            
+            // Generate Select Options
+            const years = useMemo(() => Array.from({ length: 100 }, (_, i) => (2026 - i).toString()), []);
+            const months = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString()), []);
+            const days = useMemo(() => {
+                const yearNum = parseInt(birthYear);
+                const monthNum = parseInt(birthMonth);
+                const maxDays = new Date(yearNum, monthNum, 0).getDate();
+                return Array.from({ length: maxDays }, (_, i) => (i + 1).toString());
+            }, [birthYear, birthMonth]);
+
+            // Theme toggle body class
+            useEffect(() => {
+                if (isDark) {
+                    document.body.classList.remove('light-theme');
+                } else {
+                    document.body.classList.add('light-theme');
+                }
+            }, [isDark]);
+
+            const handleSelectZodiac = (type) => {
+                setUser(prev => ({ ...prev, zodiac: type }));
+                setStep(AppStep.ZodiacInsight);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleReset = () => {
+                localStorage.removeItem(STORAGE_KEY);
+                setUser({ zodiac: ZodiacType.Rat, birthTime: '' });
+                setFinalReport('');
+                setErrorMsg(null);
+                setBirthYear('1990');
+                setBirthMonth('1');
+                setBirthDay('1');
+                setLoading(false);
+                setStep(AppStep.Welcome);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleSubmitBirth = async (e) => {
+                e.preventDefault();
+                setErrorMsg(null);
+
+                if (!user.birthTime || user.birthTime.trim() === '') {
+                    setErrorMsg("【易理警示】：尚未择定出生时辰。若时辰不明，请务必择【时辰不详】。");
+                    const el = document.getElementById('birthTimeSelect');
+                    el?.classList.add('ring-2', 'ring-red-500');
+                    setTimeout(() => el?.classList.remove('ring-2', 'ring-red-500'), 2000);
+                    return;
+                }
+
+                const yearNum = parseInt(birthYear);
+                const check = validateZodiacYear(yearNum, user.zodiac);
+                if (!check.isValid) {
+                    setErrorMsg(`【干支不合】：阁下自述属【${user.zodiac}】，然公历【${yearNum}年】实为【${check.expected}】年。推演大运需干支严丝合缝，请核实年份。`);
+                    return;
+                }
+
+                setLoading(true);
+                // 模拟仪式感延迟
+                await new Promise(r => setTimeout(r, 1500));
+
+                try {
+                    const formattedDate = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`;
+                    const bazi = await calculateBaziProfile(formattedDate, user.birthTime);
+                    const dm = bazi.day.stem;
+                    const dmData = DAY_MASTER_LIST.find(d => d.type === dm);
+                    
+                    const report = await generateCombinedStrategy(user.zodiac, dm, selectedZodiacData, dmData, bazi);
+                    const newUser = { ...user, birthDate: formattedDate, bazi, dayMaster: dm };
+                    
+                    setUser(newUser);
+                    setFinalReport(report);
+                    setLoading(false);
+                    setStep(AppStep.FinalReport);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: newUser, report }));
+                } catch (err) {
+                    console.error(err);
+                    setLoading(false);
+                    setErrorMsg("【天机阻滞】：推演过程中气场波动异常，请稍后重新叩门。");
+                }
+            };
+
+            const handleShare = async () => {
+                const shareText = `【2026 丙午·赤马年】易道智慧修运报告\n\n${finalReport}\n\n—— 知命顺时，安身立命。`;
+                if (navigator.share) {
+                    try {
+                        await navigator.share({ title: '2026 丙午修运报告', text: shareText });
+                    } catch (err) {}
+                } else {
+                    await navigator.clipboard.writeText(shareText);
+                    alert('报告内容已成功刻录（复制）到剪贴板。');
+                }
+            };
+
+            const textGold = isDark ? 'text-amber-400' : 'text-red-800';
+            const panelBg = isDark ? 'bg-slate-900/60 border-white/10' : 'bg-white/80 border-slate-200 shadow-sm';
+
+            return (
+                <div className="min-h-screen transition-colors duration-500 selection:bg-amber-500/30">
+                    <nav className={`p-6 flex justify-between items-center backdrop-blur-3xl border-b sticky top-0 z-50 transition-all ${isDark ? 'bg-slate-950/80 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                        <div className="flex items-center gap-4">
+                        <div className={`w-3 h-3 rounded-full animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)] ${isDark ? 'bg-red-500' : 'bg-red-700'}`}></div>
+                        <h1 className={`font-calligraphy text-2xl tracking-widest ${textGold}`}>2026 丙午 · 赤马年</h1>
+                        </div>
+                        <div className="flex gap-4">
+                        <button onClick={() => setTheme(prev => prev === ThemeMode.Mystic ? ThemeMode.Paper : ThemeMode.Mystic)} className={`px-4 py-1.5 rounded-full border text-[10px] font-black tracking-widest uppercase transition-all ${isDark ? 'border-white/20 hover:bg-white/10 text-slate-300' : 'border-slate-300 hover:border-red-800 text-slate-700'}`}>
+                            {isDark ? '🌙 观象' : '📜 阅卷'}
+                        </button>
+                        {step === AppStep.FinalReport && (
+                            <button onClick={handleReset} className="px-4 py-1.5 rounded-full border border-red-500/30 text-[10px] font-black tracking-widest uppercase text-red-500 hover:bg-red-500/20 active:scale-95 transition-all shadow-sm">重启推演</button>
+                        )}
+                        </div>
+                    </nav>
+
+                    <main className="container mx-auto px-4 py-12 max-w-5xl">
+                        {step === AppStep.Welcome && (
+                        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center animate-in fade-in zoom-in duration-1000">
+                            <h1 className={`text-9xl md:text-[15rem] font-calligraphy leading-none select-none drop-shadow-2xl transition-colors ${isDark ? 'text-red-600' : 'text-red-800'}`}>丙午</h1>
+                            <h2 className={`text-2xl md:text-5xl font-black mb-10 tracking-[0.6em] font-serif ${textGold}`}>赤马红羊劫</h2>
+                            <p className={`max-w-xl mb-16 leading-loose text-lg font-serif italic ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>岁在丙午，离火大旺。易学谓之“红羊劫”，亦是“九运”起航之基。凭易道智慧，观照日主，锁定胜局。</p>
+                            <button onClick={() => setStep(AppStep.ZodiacSelection)} className={`px-16 py-6 border font-black rounded-full shadow-2xl tracking-[0.5em] uppercase text-sm active:scale-95 transition-transform ${isDark ? 'bg-amber-500 text-black border-amber-400 shadow-amber-900/40' : 'bg-red-800 text-white border-red-900 shadow-red-900/20'}`}>叩启玄门</button>
+                        </div>
+                        )}
+
+                        {step === AppStep.ZodiacSelection && (
+                        <div className="animate-in fade-in slide-in-from-bottom-12 duration-700 text-center">
+                            <h3 className={`text-xl font-serif mb-16 tracking-[0.5em] uppercase font-black opacity-40`}>请择出生生肖</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                            {ZODIAC_LIST.map((z) => (
+                                <button key={z.type} onClick={() => handleSelectZodiac(z.type)} className={`p-8 backdrop-blur-xl border rounded-[3rem] transition-all group flex flex-col items-center shadow-lg ${panelBg} hover:scale-105 active:scale-95`}>
+                                <span className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-500">{z.icon}</span>
+                                <span className={`text-sm font-black tracking-widest`}>{z.type}</span>
+                                </button>
+                            ))}
+                            </div>
+                        </div>
+                        )}
+
+                        {step === AppStep.ZodiacInsight && selectedZodiacData && (
+                        <div className="max-w-2xl mx-auto text-center animate-in zoom-in-95 duration-500">
+                            <div className="text-[10rem] mb-12 drop-shadow-2xl animate-flame">{selectedZodiacData.icon}</div>
+                            <h3 className={`text-4xl font-calligraphy mb-8 tracking-widest ${textGold}`}>属{selectedZodiacData.type}者 · {selectedZodiacData.title}</h3>
+                            <div className={`p-10 md:p-14 rounded-[4rem] border mb-16 leading-relaxed text-lg text-justify font-serif shadow-inner ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`}>
+                            {selectedZodiacData.description}
+                            </div>
+                            <div className="flex flex-col gap-8 items-center">
+                            <button onClick={() => setStep(AppStep.DayMasterCalculation)} className={`px-14 py-6 rounded-full font-black shadow-2xl transition-all tracking-[0.4em] text-sm active:scale-95 ${isDark ? 'bg-amber-500 text-black' : 'bg-red-800 text-white'}`}>进阶：锁定日主精算</button>
+                            <button onClick={() => setStep(AppStep.ZodiacSelection)} className="text-slate-500 text-xs font-bold tracking-widest underline underline-offset-8 opacity-50 hover:opacity-100 transition-opacity">重选生肖</button>
+                            </div>
+                        </div>
+                        )}
+
+                        {step === AppStep.DayMasterCalculation && (
+                        <div className={`max-w-2xl mx-auto p-12 rounded-[5rem] border shadow-2xl animate-in fade-in duration-1000 ${panelBg}`}>
+                            {loading ? (
+                            <div className="flex flex-col items-center py-20 text-center">
+                                <div className={`w-20 h-20 border-4 border-t-transparent rounded-full animate-spin mb-10 ${isDark ? 'border-amber-500' : 'border-red-800'}`}></div>
+                                <h3 className={`text-2xl font-calligraphy tracking-[0.5em] animate-pulse ${textGold}`}>正在感应天地气场，排布干支乾坤...</h3>
+                                <p className="mt-6 text-xs opacity-50 font-serif italic">“知命者不惑，修身者不殆。”</p>
+                            </div>
+                            ) : (
+                            <>
+                                <div className="text-center mb-12">
+                                <h3 className={`text-2xl font-black mb-4 tracking-widest ${textGold}`}>易道排盘</h3>
+                                <p className="text-sm opacity-60 tracking-[0.3em] uppercase">请输入出生时间，精准定格流年</p>
+                                </div>
+                                <form onSubmit={handleSubmitBirth} className="space-y-12">
+                                {errorMsg && <div className="p-6 rounded-3xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm font-bold text-center animate-bounce">{errorMsg}</div>}
+                                
+                                <div className="space-y-6">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.5em] opacity-50">出生日期（公历）</label>
+                                    <div className="grid grid-cols-3 gap-4">
+                                    <select value={birthYear} onChange={(e) => setBirthYear(e.target.value)} className={`p-5 rounded-3xl border outline-none font-bold ${isDark ? 'bg-black/50 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`}>
+                                        {years.map(y => <option key={y} value={y}>{y}年</option>)}
+                                    </select>
+                                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} className={`p-5 rounded-3xl border outline-none font-bold ${isDark ? 'bg-black/50 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`}>
+                                        {months.map(m => <option key={m} value={m}>{m}月</option>)}
+                                    </select>
+                                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} className={`p-5 rounded-3xl border outline-none font-bold ${isDark ? 'bg-black/50 border-white/10 text-white' : 'bg-slate-50 border-slate-200'}`}>
+                                        {days.map(d => <option key={d} value={d}>{d}日</option>)}
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.5em] opacity-50">出生时辰</label>
+                                    <select 
+                                    id="birthTimeSelect"
+                                    value={user.birthTime} 
+                                    className={`w-full p-5 rounded-3xl border text-lg outline-none font-bold transition-all ${isDark ? 'bg-black/50 border-white/10 text-white' : 'bg-slate-50 border-slate-200'} ${!user.birthTime ? 'text-slate-500' : ''}`} 
+                                    onChange={(e) => setUser(prev => ({ ...prev, birthTime: e.target.value }))}
+                                    >
+                                    <option value="">-- 请择定准确生时 --</option>
+                                    <option value="00:00">子时 (23:00 - 01:00)</option>
+                                    <option value="02:00">丑时 (01:00 - 03:00)</option>
+                                    <option value="04:00">寅时 (03:00 - 05:00)</option>
+                                    <option value="06:00">卯时 (05:00 - 07:00)</option>
+                                    <option value="08:00">辰时 (07:00 - 09:00)</option>
+                                    <option value="10:00">巳时 (09:00 - 11:00)</option>
+                                    <option value="12:00">午时 (11:00 - 13:00)</option>
+                                    <option value="14:00">未时 (13:00 - 15:00)</option>
+                                    <option value="16:00">申时 (15:00 - 17:00)</option>
+                                    <option value="18:00">酉时 (17:00 - 19:00)</option>
+                                    <option value="20:00">戌时 (19:00 - 21:00)</option>
+                                    <option value="22:00">亥时 (21:00 - 23:00)</option>
+                                    <option value="UNKNOWN">不确定具体时辰（仅推算三柱）</option>
+                                    </select>
+                                </div>
+
+                                <button className={`w-full py-7 border rounded-[3rem] font-black shadow-2xl transition-all uppercase tracking-[0.6em] text-sm active:scale-95 ${isDark ? 'bg-amber-500 text-black border-amber-400' : 'bg-red-800 text-white border-red-900'}`}>开启易道推演</button>
+                                </form>
+                            </>
+                            )
+                        }
+                        </div>
+                        )}
+
+                        {step === AppStep.FinalReport && user.bazi && (
+                        <div className="space-y-16 animate-in fade-in duration-1000 pb-32">
+                            <div className={`p-10 md:p-16 rounded-[6rem] border text-center shadow-2xl backdrop-blur-3xl ${panelBg}`}>
+                            <h3 className="text-[10px] font-black tracking-[0.8em] mb-20 uppercase opacity-40">易道智慧 · 八字乾坤排盘</h3>
+                            <div className="grid grid-cols-4 gap-4 md:gap-16">
+                                <BaziPillarCard pillar={user.bazi.hour} label="时" theme={theme} />
+                                <BaziPillarCard pillar={user.bazi.day} label="日" theme={theme} isDayMaster />
+                                <BaziPillarCard pillar={user.bazi.month} label="月" theme={theme} />
+                                <BaziPillarCard pillar={user.bazi.year} label="年" theme={theme} isYearBranch />
+                            </div>
+                            <div className="mt-16 h-px w-24 mx-auto bg-slate-500/20"></div>
+                            <p className="mt-8 text-[9px] font-black tracking-[0.5em] uppercase italic opacity-30">此盘仅供丙午流年推演参考，天命在天，修持在己</p>
+                            </div>
+
+                            <div className={`p-12 md:p-24 rounded-[7rem] border shadow-2xl transition-colors relative overflow-hidden ${panelBg}`}>
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-amber-500/40 to-transparent"></div>
+                            <h4 className={`font-calligraphy text-6xl text-center mb-16 tracking-widest ${textGold}`}>丙午精研修运报告</h4>
+                            <div className={`leading-[2.8] text-xl whitespace-pre-wrap max-w-4xl mx-auto text-justify font-serif text-opacity-90`}>
+                                {finalReport}
+                            </div>
+                            <div className="mt-24 flex flex-col items-center gap-12">
+                                <button onClick={handleShare} className={`px-14 py-6 rounded-full font-black tracking-[0.4em] shadow-2xl transition-transform active:scale-95 ${isDark ? 'bg-amber-500 text-black' : 'bg-red-800 text-white'}`}>保存/分享修运策</button>
+                                <button onClick={handleReset} className="p-4 text-xs opacity-50 hover:opacity-100 hover:text-red-500 transition-all font-black tracking-[0.5em] underline underline-offset-8">↺ 重新开始易道推演</button>
+                            </div>
+                            </div>
+                        </div>
+                        )}
+                    </main>
+                    
+                    <footer className="text-center p-20 text-[10px] tracking-[1em] font-black opacity-20 uppercase select-none">
+                        易道智慧 · 知命顺时 · 安身立命
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
